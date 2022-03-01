@@ -1,9 +1,11 @@
 
 import os
 from flask import Flask, request
+from itsdangerous import json
 from twilio.twiml.messaging_response import MessagingResponse
 from google.cloud import dialogflow
-
+import json
+from google.protobuf.json_format import MessageToJson,MessageToDict
 
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = 'botconfig.json'
@@ -39,15 +41,18 @@ def detect_intent_texts(project_id, session_id, texts, language_code):
     )
 
 
-    # print("Query text: {}".format(response.query_result.query_text))
-    # print(
-    #     "Detected intent: {} (confidence: {})\n".format(
-    #         response.query_result.intent.display_name,
-    #         response.query_result.intent_detection_confidence,
-    #     )
-    # )
-    # print("Fulfillment text: {}\n".format(response.query_result.fulfillment_text))
-    return response.query_result.fulfillment_text
+    print("Query text: {}".format(response.query_result.query_text))
+    
+    print(
+        "Detected intent: {} (confidence: {})\n".format(
+            response.query_result.intent.display_name,
+            response.query_result.intent_detection_confidence,
+        )
+    )
+    print("Fulfillment text: {}\n".format(response.query_result.fulfillment_text))
+    import proto
+    json_string = proto.Message.to_json(response)
+    return json_string
 
 
 
@@ -68,8 +73,15 @@ def sms_reply():
     # print('..' * 50)
     # print(dialogflowResponse)
     resp = MessagingResponse()
-    resp.message(dialogflowResponse)
-
+    # resp.message(dialogflowResponse.query_result.fulfillment_text)
+    print('(0_0)'* 100)
+    print(dialogflowResponse)
+    x = json.loads(dialogflowResponse)
+    print(x['queryResult']['parameters']['email'])
+    print(x['queryResult']['parameters']['name'])
+    # print(type(json.loads(dialogflowResponse)))
+    # print(json.dumps(dialogflowResponse.query_result.parameters))
+    # print(json.dumps(dialogflowResponse).query_result['parameters'])
 
     return str(resp)
 
