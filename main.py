@@ -1,22 +1,35 @@
-
 import os
+
 from flask import Flask, request
 from itsdangerous import json
-from twilio.twiml.messaging_response import MessagingResponse
+from twilio.twiml.messaging_response import MessagingResponse, Media,Message
 from google.cloud import dialogflow
+from fpdf import FPDF
 import json
-from google.protobuf.json_format import MessageToJson,MessageToDict
+import logging
+from pathlib import Path
+print(Path.cwd().joinpath('/applicationLetter.pdf')) 
+pdf = FPDF()
+# Add a page
+pdf.add_page()
+pdf.set_font("Arial", size = 15)
+  
+# create a cell
+pdf.cell(200, 10, txt = "Techcamp Kenya", 
+         ln = 1, align = 'C')
+  
 
+ 
+# from google.protobuf.json_format import MessageToJson, MessageToDict
 
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = 'botconfig.json'
+logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
+
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "botconfig.json"
 
 PROJECT_ID = "mytestbot-aufk"
 # PROJECT_ID = "small-talk-camy"
 
 app = Flask(__name__)
-
-
-
 
 
 def detect_intent_texts(project_id, session_id, texts, language_code):
@@ -25,13 +38,11 @@ def detect_intent_texts(project_id, session_id, texts, language_code):
     Using the same `session_id` between requests allows continuation
     of the conversation."""
 
-
     session_client = dialogflow.SessionsClient()
 
     session = session_client.session_path(project_id, session_id)
     print("Session path: {}\n".format(session))
 
-   
     text_input = dialogflow.TextInput(text=texts, language_code=language_code)
 
     query_input = dialogflow.QueryInput(text=text_input)
@@ -40,9 +51,8 @@ def detect_intent_texts(project_id, session_id, texts, language_code):
         request={"session": session, "query_input": query_input}
     )
 
-
     print("Query text: {}".format(response.query_result.query_text))
-    
+
     print(
         "Detected intent: {} (confidence: {})\n".format(
             response.query_result.intent.display_name,
@@ -51,9 +61,9 @@ def detect_intent_texts(project_id, session_id, texts, language_code):
     )
     print("Fulfillment text: {}\n".format(response.query_result.fulfillment_text))
     import proto
+
     json_string = proto.Message.to_json(response)
     return json_string
-
 
 
 @app.route("/")
@@ -61,35 +71,64 @@ def hello():
     return "Hello, World!"
 
 
-@app.route("/sms", methods=['POST'])
+@app.route("/sms", methods=["POST"])
 def sms_reply():
     """Respond to incoming calls with a simple text message."""
 
-    msg = request.form.get('Body')
-   
-    dialogflowResponse = detect_intent_texts(PROJECT_ID,'thisismysessionid',msg,'en')
-    print(dialogflowResponse)
-    # dialogflowResponse = request.get_json(force=True)
-    # print('..' * 50)
-    # print(dialogflowResponse)
+    msg = request.form.get("Body")
+    x = request.form.get("Media")
+    print('this is my x', x)
+    
+    dialogflowResponse = detect_intent_texts(PROJECT_ID, "thisismysessionid", msg, "en")
+    
+    # storing name and email of user
+    # name:str 
+
+
+    result = json.loads(dialogflowResponse)
+
+    if len(result['queryResult']['parameters'].keys()) > 0: 
+        # print(result['queryResult']['parameters'].keys())
+
+        name:str = result['queryResult']['parameters']['name']
+        email:str = result['queryResult']['parameters']['email']
+        if name and email:
+            print('i am here', name , email)
+            logging.info('Saving user to students database')
+            # generating pdf
+            # add another cell
+            pdf.cell(200, 10, txt = f"Hey {name}, this is your Application letter",
+                    ln = 2, align = 'C')
+            
+            # save the pdf with name .pdf
+            pdfx = pdf.output("applicationLetter.pdf") 
+            resp = MessagingResponse()
+            print(pdfx,'pdf')
+            message =  Message()
+            message.body('Here is your apllicition letter')
+            message.media(Path.cwd().joinpath('/applicationLetter.pdf'))
+            resp.append(message)
+            
+            
+            return str(resp)
+                    
+        
+
+    
+
+
     resp = MessagingResponse()
-    # resp.message(dialogflowResponse.query_result.fulfillment_text)
-    print('(0_0)'* 100)
-    print(dialogflowResponse)
-    x = json.loads(dialogflowResponse)
-    print(x['queryResult']['parameters']['email'])
-    print(x['queryResult']['parameters']['name'])
-    # print(type(json.loads(dialogflowResponse)))
-    # print(json.dumps(dialogflowResponse.query_result.parameters))
-    # print(json.dumps(dialogflowResponse).query_result['parameters'])
+    # this is sending response to user
+    resp.message(result['queryResult']['fulfillmentText'])
 
     return str(resp)
 
-@app.route("/flow", methods=['POST','GET'])
+
+@app.route("/flow", methods=["POST", "GET"])
 def flow_reply():
-    x = detect_intent_texts(PROJECT_ID, '123456789', 'payments','en')
-    print('hey flow',x)
-    return 'je'
+    x = detect_intent_texts(PROJECT_ID, "123456789", "payments", "en")
+    print("hey flow", x)
+    return "je"
 
 
 if __name__ == "__main__":
