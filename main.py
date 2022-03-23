@@ -7,15 +7,23 @@ from google.cloud import dialogflow
 from fpdf import FPDF
 import json
 import logging
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 from pathlib import Path
-print(Path.cwd().joinpath('/applicationLetter.pdf')) 
+
+path = Path('./pdfs/one.pdf')
+xy = os.path.abspath(path)
+
 pdf = FPDF()
 # Add a page
 pdf.add_page()
 pdf.set_font("Arial", size = 15)
-  
+
+cloudinary.config(cloud_name="gicheworks", api_key="248314148666268", api_secret="vQAEKDhMrXCu0jJXWpixEr9N0iE")
 # create a cell
 pdf.cell(200, 10, txt = "Techcamp Kenya", 
+
          ln = 1, align = 'C')
   
 
@@ -101,21 +109,21 @@ def sms_reply():
                     ln = 2, align = 'C')
             
             # save the pdf with name .pdf
-            pdfx = pdf.output("applicationLetter.pdf") 
+            pdfx = pdf.output(f"./pdfs/{name}.pdf") 
             resp = MessagingResponse()
             print(pdfx,'pdf')
             message =  Message()
+      
+              
+
+            pdfResult = cloudinary.uploader.upload(f'pdfs/{name}.pdf', public_id=f'admission-Letters/{name}')
+            # print('this is my img var', pdfResult)
+            
             message.body('Here is your apllicition letter')
-            message.media(Path.cwd().joinpath('/applicationLetter.pdf'))
+            message.media(pdfResult['secure_url'])
             resp.append(message)
-            
-            
-            return str(resp)
-                    
         
-
-    
-
+            return str(resp)
 
     resp = MessagingResponse()
     # this is sending response to user
