@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask, request
+from flask import Flask, jsonify, request
 from itsdangerous import json
 from twilio.twiml.messaging_response import MessagingResponse, Media,Message
 from google.cloud import dialogflow
@@ -73,11 +73,22 @@ def detect_intent_texts(project_id, session_id, texts, language_code):
     json_string = proto.Message.to_json(response)
     return json_string
 
+######## do not touch#####
 
-@app.route("/")
-def hello():
-    return "Hello, World!"
+@app.route('/')
+def hello_world():
+    return jsonify({
+   "response":"true"
+})
 
+@app.route('/false')
+def false():
+    return  jsonify({
+   "response":"false"
+})
+
+
+######## do not touch#####
 
 @app.route("/sms", methods=["POST"])
 def sms_reply():
