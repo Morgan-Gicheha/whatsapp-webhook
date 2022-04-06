@@ -78,7 +78,7 @@ def detect_intent_texts(project_id, session_id, texts, language_code):
 @app.route('/')
 def hello_world():
     return jsonify({
-   "response":"false"
+   "response":"true"
 })
 
 @app.route('/false')
