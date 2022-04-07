@@ -75,13 +75,13 @@ def detect_intent_texts(project_id, session_id, texts, language_code):
 
 ######## do not touch#####
 
-@app.route('/')
-def hello_world():
-    return jsonify({
-   "response":"true"
-})
+# @app.route('/')
+# def hello_world():
+#     return jsonify({
+#    "response":"true"
+# })
 
-@app.route('/false')
+@app.route('/')
 def false():
     return  jsonify({
    "response":"false"
